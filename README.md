@@ -1,9 +1,8 @@
 <img src="https://img.shields.io/badge/-HTML5-333.svg?logo=html5&style=flat">　
 
 ## 0.利用方法
-  1. 事前にVOICEVOX[https://voicevox.hiroshiba.jp]をダウンロードし起動してください。
-  2. 本アプリはVOICEVOX起動時に立ち上がるローカルサーバを利用しているため、
-     通常のブラウザから実行するとCORSエラーが発生し正しく起動しません。
+  1. 事前にVOICEVOX[https://voicevox.hiroshiba.jp] をダウンロードし起動してください。
+  2. 本アプリはVOICEVOX起動時に立ち上がるローカルサーバを利用しているため通常のブラウザから実行するとCORSエラーが発生し正しく起動しません。
   3. 正常に動作させるには右記リンク先を参考にブラウザのCORSエラーを回避のうえご利用ください。
      [https://qiita.com/t_katsumura/items/3f2a401ff6e2076acb26]
   4. アプリ右上のテキストボックスにchatGPTのAPIを貼り付けてください。
