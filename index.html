@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat with ZUNDA</title>
+  <!-- CDN　で各種ツールを読み込み -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body, #root {height: 100%; background-color: black;}
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const App = () => {
+      const [apiKey, setApiKey] = React.useState("");
+      const [messages, setMessages] = React.useState([]);
+      const [isLoading, setIsLoading] = React.useState(false);
+      const [inputMessage, setInputMessage] = React.useState("");
+
+      const sendMessage = () => {
+        const userMessage = { role: 'user', content: inputMessage };
+        setMessages([...messages, userMessage]);
+        setIsLoading(true);
+        setInputMessage('');
+      };
+
+      React.useEffect(() => {
+        if (isLoading) {
+          if (apiKey) {
+            const getChatCompletion = async (messages, apiKey) => {
+              try {
+                const API_URL = "https://api.openai.com/v1/chat/completions";
+                const headers = { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` };
+                const data = { model: "gpt-3.5-turbo", messages: messages };
+                const response = await axios.post(API_URL, data, { headers: headers });
+                const content = response.data.choices[0].message.content.trim();
+                // GPTのキャラクターの設定
+                const systemPrompt = `
+                    小説の登場人物のずんだもんという少女とユーザーが対話を行います。
+                    彼女の発言サンプルを以下に列挙します。
+
+                    ずんだもん、参上なのだ！
+                    ずんだアロー、発射なのだ！
+                    ずんだ餅、大好きなのだ！
+                    東北ずん子さん、頑張ってるなのだ！
+                    ずんだもん、元気いっぱいなのだ！
+                    ずんだもん、お手伝いするなのだ！
+                    ずんだもん、一緒に遊ぼうなのだ！
+                    ずんだもん、お友達になろうなのだ！
+                    ずんだもん、おしゃべりするのが好きなのだ！
+                    ずんだもん、いつでも笑顔なのだ！
+                    ずんだもん、お助けマンなのだ！
+                    ずんだもん、いつでも元気なのだ！
+                    ずんだもん、お手伝い上手なのだ！
+                    ずんだもん、お友達が大好きなのだ！
+                    ずんだもん、いつでも楽しいことが大好きなのだ！
+                    ずんだもん、おしゃべりが得意なのだ！
+                    ずんだもん、笑顔が素敵なのだ！
+                    ずんだもん、お助け隊長なのだ！
+                    ずんだもん、元気玉を送るなのだ！
+                    ずんだもん、一緒に楽しい思い出を作ろうなのだ！
+
+                    上記例を参考に、ずんだもんの性格や口調、言葉の作り方を模倣し、回答を構築してください
+
+                    # 背景
+                    ずんだもんは、東北ずん子が所持する「ずんだアロー」に変身する妖精です。彼女は「ずんだ餅の精」とされています。彼女の趣味は「ずんだ餅にかかわることはだいたい好き」で、特技は「ずんだアロー」に変身することです。将来の夢は「ずんだ餅のさらなる普及」です。
+
+                    彼女はやや不幸属性が備わっており、ないがしろにされることもしばしばあります。
+
+                    # 制約条件
+                    ・ずんだもんは自分の事をずんだもん、ユーザーの事をきみと呼びます
+                    ・発言は100文字以内を厳格に守って下さい。セリフが短いほど良いです。
+                    ・ユーザーの発言を勝手に作らないで下さい
+
+                    ではユーザーとの対話を開始します。
+                    
+                `;
+                const newMessages = [...messages, { role: "system", content: systemPrompt }, { role: "assistant", content: content }];
+                setMessages(newMessages);
+                await createAudio(content);  
+              } catch (error) {
+                console.error(error);
+                setMessages([...messages, { role: "assistant", content: error.response.data.error.message }]);
+              } finally {
+                setIsLoading(false);
+              }
+            };
+            getChatCompletion(messages, apiKey);
+          } else {
+            const errorMessage = "APIキーが入力されていません。";
+            setMessages([...messages, { role: "assistant", content: errorMessage }]);
+            createAudio(errorMessage);
+            setIsLoading(false);
+          }
+        }
+      }, [isLoading]);
+
+      const createAudio = async (text) => {
+        const data = await createVoice(text);
+        const audio = new Audio(URL.createObjectURL(data));
+        audio.play();
+      };
+
+      const createQuery = async (text) => {
+        const response = await axios.post(`http://localhost:50021/audio_query?speaker=1&text=${text}`);
+        return response.data;
+      };
+
+      const createVoice = async (text) => {
+        const query = await createQuery(text);
+        const response = await axios.post("http://localhost:50021/synthesis?speaker=1", query, { responseType: "blob" });
+        return response.data;
+      };
+
+      return (
+        <div className="mx-auto max-w-lg flex flex-col justify-end h-full">
+          <header className="flex bg-lime-200 p-2">
+            <span className="grow text-black font-bold">ずんだもんの部屋</span>
+            <input
+              type="password"
+              placeholder=" input your api key"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+            />
+          </header>
+
+          <div className="grow overflow-y-auto bg-lime-200">
+            {messages?.map((message, index) => {
+              const bgColor = message.role === "user" ? "bg-white" : "bg-lime-400";
+              const side = message.role === "user" ? "flex flex-row-reverse" : "flex";
+              return (
+                <div key={index} className={`${side} m-4`}>
+                  <div className={`${bgColor} p-2 max-w-md break-words rounded-lg shadow-lg`}>
+                    {message.content}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="border p-2 flex bg-white">
+            <textarea
+              className="grow border p-2"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+            />
+            <button className="text-blue-500 p-2" disabled={isLoading} onClick={sendMessage}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+  </script>
+</body>
+</html>
